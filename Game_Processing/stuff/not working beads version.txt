@@ -1,0 +1,118 @@
+import beads.*;
+import java.io.*;
+
+AudioContext audioContext;
+HashMap<String, ArrayList<SamplePlayer>> audioFilesByPlayerAndCategory;
+
+int playerCount = 2;
+int connectionCount = 6;
+int categoryCount = connectionCount;
+
+SamplePlayer currentFile;
+Gain gain;
+
+int currentPlayer = 1;
+
+void setup()
+{
+  audioContext = new AudioContext();
+  gain = new Gain(audioContext, 1, 200);
+  audioContext.out.addInput(gain);
+
+  loadSoundFiles();
+}
+
+void draw()
+{
+  if (currentFile == null)
+  {
+    playerMove((int)random(1, connectionCount + 1), random(1) < 0.5);
+  }
+}
+
+void startGame()
+{
+  currentPlayer = 1;
+  if (currentFile != null)
+  {
+    currentFile.reset();
+    currentFile = null;
+  }
+}
+
+void playerMove(int categoryNumber, boolean connected)
+{
+  playRandomFile(currentPlayer, categoryNumber, connected);
+  currentPlayer = 3 - currentPlayer; // Switch between 1 and 2
+}
+
+void playRandomFile(int playerNumber, int categoryNumber, boolean connected)
+{
+  String key = makeKey(playerNumber, categoryNumber, connected);
+  ArrayList<SamplePlayer> audioFiles = audioFilesByPlayerAndCategory.get(key);
+
+  int Number = (int) random(audioFiles.size());
+  SamplePlayer audioFile = audioFiles.get(Number);
+
+  audioFile.reset();
+  audioFile.start();
+
+  currentFile = audioFile;
+}
+
+void loadSoundFiles()
+{
+  audioFilesByPlayerAndCategory = new HashMap<String, ArrayList<SamplePlayer>>(); 
+  for (int playerNumber = 1; playerNumber <= playerCount; playerNumber++)
+  {
+    for (int categoryNumber = 1; categoryNumber <= categoryCount; categoryNumber++)
+    {
+      loadFilesWithPrefix(makeKey(playerNumber, categoryNumber, true));
+      loadFilesWithPrefix(makeKey(playerNumber, categoryNumber, false));
+    }
+  }
+}
+
+void loadFilesWithPrefix(String prefix)
+{
+  ArrayList<SamplePlayer> audioFilesForPrefix = new ArrayList<SamplePlayer>();
+  audioFilesByPlayerAndCategory.put(prefix, audioFilesForPrefix);
+
+  String filenamePrefix = dataPath(prefix) + " ";
+  int Number = 1;
+  while (true)
+  {
+    String filename = filenamePrefix + Number + ".mp3";
+    File file = new File(filename);
+    if (!file.exists())
+    {
+      println(prefix + ": Loaded " + (Number - 1) + " files.");
+      return;
+    }
+
+    try
+    {
+      SamplePlayer samplePlayer = new SamplePlayer(audioContext, new Sample(filename));
+      samplePlayer.setKillOnEnd(false);
+      audioFilesForPrefix.add(samplePlayer);
+      gain.addInput(samplePlayer);
+      samplePlayer.start();
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+      exit();
+    }
+
+    //println("Loaded: " + prefix + " #" + Number);
+
+    Number++;
+  }
+}
+
+String makeKey(int playerNumber, int categoryNumber, boolean connected)
+{
+  return "P" + playerNumber
+    + " C" + categoryNumber
+    + (connected ? "+" : "-");
+}
