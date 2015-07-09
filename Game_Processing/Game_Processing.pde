@@ -11,12 +11,20 @@ int categoryCount = connectionCount;
 AudioPlayer currentFile;
 
 int currentPlayer = 1;
+String previousInput;
 
 void setup()
 {
   minim = new Minim(this);
 
   loadSoundFiles();
+  startGame();
+  
+  /*
+  currentPlayer = 1;
+  previousInput = "040000";
+  processInput(   "000000");
+  */
 }
 
 void draw()
@@ -42,10 +50,54 @@ void startGame()
     currentFile.pause();
     currentFile = null;
   }
+  previousInput = "000000";
+}
+
+void processInput(String newInput)
+{
+  if (currentFile != null)
+  {
+    println("Input changed, but file was still playing");
+    previousInput = newInput;
+    return;
+  }
+  
+  if (previousInput.equals(newInput))
+  {
+    println("Input didn't change");
+    return;
+  }
+  
+  for (int connectionIndex1 = 0; connectionIndex1 < connectionCount; connectionIndex1++)
+  {
+    if (newInput.charAt(connectionIndex1) != previousInput.charAt(connectionIndex1))
+    {
+      int connection1 = connectionIndex1 + 1;
+      int connection2 = Character.getNumericValue(newInput.charAt(connectionIndex1));
+      int previousConnection2 = Character.getNumericValue(previousInput.charAt(connectionIndex1));
+      
+      boolean connected = connection2 != 0;
+      int categoryNumber = 0;
+      if (connected)
+      {
+        categoryNumber = (currentPlayer == 1) ? connection1 : connection2;
+      }
+      else
+      {
+        categoryNumber = (currentPlayer == 1) ? connection1 : previousConnection2;
+      }
+      
+      previousInput = newInput;
+      playerMove(categoryNumber, connected);
+      break;
+    }
+  }
 }
 
 void playerMove(int categoryNumber, boolean connected)
 {
+  println("Player " + currentPlayer + ": Category #" + categoryNumber + " " + (connected ? "connected" : "disconnected"));
+  
   playRandomFile(currentPlayer, categoryNumber, connected);
   currentPlayer = 3 - currentPlayer; // Switch between 1 and 2
 }
