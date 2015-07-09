@@ -13,7 +13,7 @@ void setup() {
 
 void draw() {
   while (myPort.available() > 0) {
-    int inByte = myPort.read();
-    println(inByte);
+    String inByte = myPort.readString();
+    print(inByte);
   }
 }
