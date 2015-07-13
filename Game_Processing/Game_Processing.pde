@@ -1,5 +1,9 @@
 import ddf.minim.*;
 import java.io.*;
+import processing.serial.*;
+
+Serial myPort;  // The serial port
+String port = "COM15";
 
 Minim minim;
 HashMap<String, ArrayList<AudioPlayer>> audioFilesByPlayerAndCategory;
@@ -7,15 +11,25 @@ HashMap<String, ArrayList<AudioPlayer>> audioFilesByPlayerAndCategory;
 int playerCount = 2;
 int connectionCount = 6;
 int categoryCount = connectionCount;
+float lockInDuration = 3.5;
 
 AudioPlayer currentFile;
 
 int currentPlayer = 1;
 String previousInput;
 
+String readingInput;
+
+String lockingInInput;
+float currentInputLockInCountdown;
+
+long previousNanoTime;
+
 void setup()
 {
   minim = new Minim(this);
+
+  myPort = new Serial(this, port, 9600);
 
   loadSoundFiles();
   startGame();
@@ -29,15 +43,71 @@ void setup()
 
 void draw()
 {
+  long currentNanoTime = System.nanoTime();
+  float elapsedTime = (currentNanoTime - previousNanoTime) / 1000000000.0; 
+  previousNanoTime = currentNanoTime;
+  
+  if (elapsedTime == 0)
+    elapsedTime = 0.001;
+  
   if (currentFile == null)
   {
-    playerMove((int)random(1, connectionCount + 1), random(1) < 0.5);
+    if (lockingInInput.length() > 0)
+    {
+      currentInputLockInCountdown -= elapsedTime;
+      if (currentInputLockInCountdown <= 0)
+      {
+        processInput(lockingInInput);
+        lockingInInput = "";
+      }
+    }
+    //playerMove((int)random(1, connectionCount + 1), random(1) < 0.5);
   }
   else
   {
     if (!currentFile.isPlaying())
     {
       currentFile = null;
+    }
+  }
+  
+  while (myPort.available() > 0) {
+    lockingInInput = "";
+    char c = myPort.readChar();
+    if (c == '\r')
+      continue;
+      
+    if (c == '\n')
+    {
+      if (readingInput.length() == 6)
+      {
+        if (currentFile == null)
+        {
+          println("[Bluetooth Reader] Locking in: " + readingInput);
+          lockingInInput = readingInput;
+          currentInputLockInCountdown = lockInDuration;
+        }
+        else
+        {
+          println("[Bluetooth Reader] Got valid input, but still playing a file; discarding the input. (" + readingInput + ")");
+          
+          // Save the state anyway
+          previousInput = readingInput;
+        }
+      }
+      else
+      {
+        println("[Bluetooth Reader] Unknown input: '" + readingInput + "' (" + readingInput.length() + ")");
+      }
+      readingInput = "";
+    }
+    else if (Character.isLetterOrDigit(c))
+    {
+      readingInput += c;
+    }
+    else
+    {
+      println("[Bluetooth Reader] Unrecognized character ASCII #" + (int) c);
     }
   }
 }
@@ -51,6 +121,9 @@ void startGame()
     currentFile = null;
   }
   previousInput = "000000";
+  
+  readingInput = "";
+  lockingInInput = "";
 }
 
 void processInput(String newInput)
