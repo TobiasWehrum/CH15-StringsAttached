@@ -11,7 +11,7 @@ HashMap<String, ArrayList<AudioPlayer>> audioFilesByPlayerAndCategory;
 int playerCount = 2;
 int connectionCount = 6;
 int categoryCount = connectionCount;
-float lockInDuration = 3.5;
+float lockInDuration = 2;
 
 AudioPlayer currentFile;
 
@@ -48,27 +48,24 @@ void draw()
   previousNanoTime = currentNanoTime;
   
   if (elapsedTime == 0)
+  {
     elapsedTime = 0.001;
-  
-  if (currentFile == null)
-  {
-    if (lockingInInput.length() > 0)
-    {
-      currentInputLockInCountdown -= elapsedTime;
-      if (currentInputLockInCountdown <= 0)
-      {
-        processInput(lockingInInput);
-        lockingInInput = "";
-      }
-    }
-    //playerMove((int)random(1, connectionCount + 1), random(1) < 0.5);
   }
-  else
+  
+  if (lockingInInput.length() > 0)
   {
-    if (!currentFile.isPlaying())
+    currentInputLockInCountdown -= elapsedTime;
+    if (currentInputLockInCountdown <= 0)
     {
-      currentFile = null;
+      processInput(lockingInInput);
+      lockingInInput = "";
     }
+  }
+  //playerMove((int)random(1, connectionCount + 1), random(1) < 0.5);
+  
+  if ((currentFile != null) && !currentFile.isPlaying())
+  {
+    currentFile = null;
   }
   
   while (myPort.available() > 0) {
@@ -81,11 +78,14 @@ void draw()
     {
       if (readingInput.length() == 6)
       {
+        /*
         if (currentFile == null)
         {
-          println("[Bluetooth Reader] Locking in: " + readingInput);
-          lockingInInput = readingInput;
-          currentInputLockInCountdown = lockInDuration;
+        */
+        println("[Bluetooth Reader] Locking in: " + readingInput);
+        lockingInInput = readingInput;
+        currentInputLockInCountdown = lockInDuration;
+        /*
         }
         else
         {
@@ -94,6 +94,7 @@ void draw()
           // Save the state anyway
           previousInput = readingInput;
         }
+        */
       }
       else
       {
@@ -128,11 +129,20 @@ void startGame()
 
 void processInput(String newInput)
 {
+  /*
   if (currentFile != null)
   {
     println("Input changed, but file was still playing");
     previousInput = newInput;
     return;
+  }
+  */
+  
+  if (currentFile != null)
+  {
+    println("Interrupted currently playing file.");
+    currentFile.pause();
+    currentFile = null;
   }
   
   if (previousInput.equals(newInput))
