@@ -17,7 +17,8 @@ SoftwareSerial bluetooth(bluetoothTx, bluetoothRx);
   int currentData[6] = {0,0,0,0,0,0};
   int i = 0;
   int gameState;
-  boolean connection = false;
+  boolean isConnected = false;
+  boolean wasConnected = false;
   int previous_1 = 0;
   int previous_2 = 0;
   int current_1 = 0;
@@ -52,8 +53,10 @@ void loop() {
   sensors[3] = analogRead(A3);
   sensors[4] = analogRead(A4);
   sensors[5] = analogRead(A5);
-  gameState = digitalRead(5);
+  gameState = digitalRead(4);
 
+  //Serial.println(); Serial.print(sensors[1]); delay(1); return;
+    
   for(i = 0; i < 6; i++){
     if(sensors[i] != 0){
        int n = inputData(sensors[i]);
@@ -73,10 +76,29 @@ void loop() {
     
   }
   
-   //output(); 
-   if(!playerConnection){
-     Serial.println("disconnected");
-   }
+  //output(); 
+  /*
+  if(!playerConnection()){
+    Serial.println("disconnected");
+  }
+  */
+
+  isConnected = playerConnection();
+  if (isConnected != wasConnected)
+  {
+    if (isConnected)
+    {
+      Serial.println("+");
+      bluetooth.println("+");
+    }
+    else
+    {
+      Serial.println("-");
+      bluetooth.println("-");
+    }
+  }
+   
+   wasConnected = isConnected;
    
    delay(1);        // delay in between reads for stability
 }
@@ -104,32 +126,35 @@ void loop() {
   
   
   int inputData(int _number){
-    if(_number < 20){
+    if(_number < 5){ // old: 20
       return 0;
     }
+
+    int tolerance = 10;
     
-    if(_number < 50){
+    if(_number < 42 + tolerance){ // old: 50; read wires: 42
       return 1;  
     }   
     
-    if(_number < 150){
+    if(_number < 178 + tolerance){ // old: 150; read wires: 178
       return 2;  
     }  
     
-    if( _number < 250){
+    if( _number < 319 + tolerance){ // old: 250; read wires: 319
       return 3;  
     }       
     
-    if( _number < 350){
+    if( _number < 512 + tolerance){ // old: 350; read wires: 512
       return 4;  
     }   
   
-    if( _number < 480){
+    if( _number < 696 + tolerance){ // old: 480; read wires: 696
       return 5;  
     }
-    
-      return 6;  
+
+  return 6;  // read wires: 1023
        
     
   
   }
+
