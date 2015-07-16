@@ -32,7 +32,28 @@ float currentInputLockInCountdown;
 
 long previousNanoTime;
 
+boolean game = true;
+boolean art = true;
+
 void setup()
+{
+  if (game)
+    game_setup();
+    
+  if (art)
+    art_setup();
+}
+
+void draw()
+{
+  if (game)
+    game_draw();
+    
+  if (art)
+    art_draw();
+}
+
+void game_setup()
 {
   minim = new Minim(this);
 
@@ -54,7 +75,7 @@ void setup()
   previousNanoTime = 0;
 }
 
-void draw()
+void game_draw()
 {
   long currentNanoTime = System.nanoTime();
   float elapsedTime = (currentNanoTime - previousNanoTime) / 1000000000.0; 
@@ -213,6 +234,16 @@ void processInput(String newInput)
       
       previousInput = newInput;
       playerMove(categoryNumber, connected);
+      
+      if (connected)
+      {
+        addGrowth(connection1);
+      }
+      else
+      {
+        removeGrowth(connection1);
+      }
+      
       break;
     }
   }
