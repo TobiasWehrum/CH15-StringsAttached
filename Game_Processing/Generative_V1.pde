@@ -28,7 +28,7 @@ void scaledSize(int originalWidth, int originalHeight, int desiredWidth, int des
 void art_setup()
 {
   int originalWidth = 1024;
-  int originalHeight = 400;
+  int originalHeight = 500;
 
   if (game)
   {
@@ -47,12 +47,12 @@ void art_setup()
   float b = 255;
   colors = Arrays.asList(new Integer[]
             {
-              color(60*0, s, b, alpha),
-              color(60*1, s, b, alpha),
-              color(60*2, s, b, alpha),
-              color(60*3, s, b, alpha),
-              color(60*4, s, b, alpha),
-              color(60*5, s, b, alpha),
+              color(27, s, b, alpha),
+              color(60, s, b, alpha),
+              color(171, s, b, alpha),
+              color(207, s, b, alpha),
+              color(284, s, b, alpha),
+              color(326, s, b, alpha),
             });
   
   areaWidth = originalWidth * scale;

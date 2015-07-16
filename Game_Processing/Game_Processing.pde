@@ -18,7 +18,7 @@ float songVolume = 1;
 int songFadeTimeIn = 2 * 1000;
 int songFadeTimeOut = 10 * 1000;
 int gainLow = -100;
-int gainHigh = 0;
+int gainHigh = -8;
 
 AudioPlayer currentFile;
 
@@ -37,11 +37,11 @@ boolean art = true;
 
 void setup()
 {
-  if (game)
-    game_setup();
-    
   if (art)
     art_setup();
+
+  if (game)
+    game_setup();
 }
 
 void draw()
@@ -149,10 +149,12 @@ void game_draw()
       }
       else if (c == '+')
       {
+        println("Connected!");
         playSong();
       }
       else if (c == '-')
       {
+        println("Disconnected! Goodbye, thanks for playing!");
         stopSong();
       }
       else
