@@ -39,7 +39,7 @@ void reset()
 {
   background(0);
   growths.clear();
-  growths.add(new Growth(0, 0));
+  //growths.add(new Growth(0, 0));
   //for (int i = 0; i < 5; i++)
   //  growths.add(new Growth(random(-width/2, width/2), random(-height/2, height/2)));
 }
@@ -77,10 +77,19 @@ void draw()
   }
 }
 
-void addGrowth()
+float randomX()
 {
-  growths.add(new Growth(random(-areaWidth/2 + borderWidthX * scale, areaWidth/2 - borderWidthX * scale), 
-  random(-areaHeight/2 + borderWidthY * scale, areaHeight/2 - borderWidthY * scale)));
+  return random(-areaWidth/2 + borderWidthX * scale, areaWidth/2 - borderWidthX * scale);
+}
+
+float randomY()
+{
+  return random(-areaHeight/2 + borderWidthY * scale, areaHeight/2 - borderWidthY * scale);
+}
+
+void addGrowth(int number)
+{
+  growths.add(new Growth(-areaWidth / 2 + areaWidth * (number/7f), randomY()));
 }
 
 void keyPressed()
@@ -92,9 +101,39 @@ void keyPressed()
 
   if (key == 'a')
   {
-    addGrowth();
+    growths.add(new Growth(randomX(), randomY()));
   }
 
+  if (key == '1')
+  {
+    addGrowth(1);
+  }
+  
+  if (key == '2')
+  {
+    addGrowth(2);
+  }
+  
+  if (key == '3')
+  {
+    addGrowth(3);
+  }
+  
+  if (key == '4')
+  {
+    addGrowth(4);
+  }
+  
+  if (key == '5')
+  {
+    addGrowth(5);
+  }
+  
+  if (key == '6')
+  {
+    addGrowth(6);
+  }
+  
   if (key == 'd')
   {
     for (Growth growth : growths)
