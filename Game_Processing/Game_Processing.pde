@@ -7,11 +7,18 @@ String port = "COM15";
 
 Minim minim;
 HashMap<String, ArrayList<AudioPlayer>> audioFilesByPlayerAndCategory;
+AudioPlayer song;
 
 int playerCount = 2;
 int connectionCount = 6;
 int categoryCount = connectionCount;
 float lockInDuration = 2;
+
+float songVolume = 1; 
+int songFadeTimeIn = 2 * 1000;
+int songFadeTimeOut = 10 * 1000;
+int gainLow = -100;
+int gainHigh = 0;
 
 AudioPlayer currentFile;
 
@@ -39,19 +46,30 @@ void setup()
   previousInput = "040000";
   processInput(   "000000");
   */
+
+  song.setVolume(0);
+  song.setGain(gainLow);
+  song.loop();
+  
+  previousNanoTime = 0;
 }
 
 void draw()
 {
   long currentNanoTime = System.nanoTime();
   float elapsedTime = (currentNanoTime - previousNanoTime) / 1000000000.0; 
+  if (previousNanoTime == 0)
+  {
+    elapsedTime = 0;
+  }
+  
   previousNanoTime = currentNanoTime;
   
   if (elapsedTime == 0)
   {
     elapsedTime = 0.001;
   }
-  
+
   if (lockingInInput.length() > 0)
   {
     currentInputLockInCountdown -= elapsedTime;
@@ -68,49 +86,72 @@ void draw()
     currentFile = null;
   }
   
-  while (myPort.available() > 0) {
-    lockingInInput = "";
-    char c = myPort.readChar();
-    if (c == '\r')
-      continue;
-      
-    if (c == '\n')
-    {
-      if (readingInput.length() == 6)
+  if (myPort != null)
+  {
+    while (myPort.available() > 0) {
+      lockingInInput = "";
+      char c = myPort.readChar();
+      if (c == '\r')
+        continue;
+        
+      if (c == '\n')
       {
-        /*
-        if (currentFile == null)
+        if (readingInput.length() == 6)
         {
-        */
-        println("[Bluetooth Reader] Locking in: " + readingInput);
-        lockingInInput = readingInput;
-        currentInputLockInCountdown = lockInDuration;
-        /*
+          /*
+          if (currentFile == null)
+          {
+          */
+          println("[Bluetooth Reader] Locking in: " + readingInput);
+          lockingInInput = readingInput;
+          currentInputLockInCountdown = lockInDuration;
+          /*
+          }
+          else
+          {
+            println("[Bluetooth Reader] Got valid input, but still playing a file; discarding the input. (" + readingInput + ")");
+            
+            // Save the state anyway
+            previousInput = readingInput;
+          }
+          */
         }
         else
         {
-          println("[Bluetooth Reader] Got valid input, but still playing a file; discarding the input. (" + readingInput + ")");
-          
-          // Save the state anyway
-          previousInput = readingInput;
+          println("[Bluetooth Reader] Unknown input: '" + readingInput + "' (" + readingInput.length() + ")");
         }
-        */
+        readingInput = "";
+      }
+      else if (Character.isLetterOrDigit(c))
+      {
+        readingInput += c;
+      }
+      else if (c == '+')
+      {
+        playSong();
+      }
+      else if (c == '-')
+      {
+        stopSong();
       }
       else
       {
-        println("[Bluetooth Reader] Unknown input: '" + readingInput + "' (" + readingInput.length() + ")");
+        println("[Bluetooth Reader] Unrecognized character '" + c + "' ASCII #" + (int) c);
       }
-      readingInput = "";
-    }
-    else if (Character.isLetterOrDigit(c))
-    {
-      readingInput += c;
-    }
-    else
-    {
-      println("[Bluetooth Reader] Unrecognized character ASCII #" + (int) c);
     }
   }
+}
+
+void playSong()
+{
+  song.shiftVolume(song.getVolume(), songVolume, songFadeTimeIn);
+  song.shiftGain(song.getGain(), gainHigh, songFadeTimeIn);
+}
+
+void stopSong()
+{
+  song.shiftVolume(song.getVolume(), 0, songFadeTimeOut);
+  song.shiftGain(song.getGain(), gainLow, songFadeTimeOut);
 }
 
 void startGame()
@@ -201,6 +242,8 @@ void playRandomFile(int playerNumber, int categoryNumber, boolean connected)
 
 void loadSoundFiles()
 {
+  song = minim.loadFile("nostalgia undone.mp3");
+  
   audioFilesByPlayerAndCategory = new HashMap<String, ArrayList<AudioPlayer>>(); 
   for (int playerNumber = 1; playerNumber <= playerCount; playerNumber++)
   {
@@ -217,18 +260,19 @@ void loadFilesWithPrefix(String prefix)
   ArrayList<AudioPlayer> audioFilesForPrefix = new ArrayList<AudioPlayer>();
   audioFilesByPlayerAndCategory.put(prefix, audioFilesForPrefix);
 
-  String filenamePrefix = dataPath(prefix) + " ";
+  String filenamePrefix = dataPath(prefix);
   int Number = 1;
   while (true)
   {
-    File file = new File(filenamePrefix + Number + ".mp3");
+    String postfix = "_" + Number + ".mp3";
+    File file = new File(filenamePrefix + postfix);
     if (!file.exists())
     {
       println(prefix + ": Loaded " + (Number - 1) + " files.");
       return;
     }
 
-    audioFilesForPrefix.add(minim.loadFile(prefix + " " + Number + ".mp3"));
+    audioFilesForPrefix.add(minim.loadFile(prefix + postfix));
 
     //println("Loaded: " + prefix + " #" + Number);
 
@@ -238,8 +282,6 @@ void loadFilesWithPrefix(String prefix)
 
 String makeKey(int playerNumber, int categoryNumber, boolean connected)
 {
-  return "P" + playerNumber
-    + " C" + categoryNumber
-    + (connected ? "+" : "-");
+  return "undone_p" + playerNumber + "_" + (1 + (categoryNumber - 1) * 2 + (connected ? 0 : 1));
 }
 
